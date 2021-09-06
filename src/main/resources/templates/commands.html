@@ -1,0 +1,23 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>机器人指令大全</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+</head>
+<body>
+<h2>黑心企业日报机器人指令大全</h2>
+<ul>
+    <li>
+        <code>@日报 blabla</code>：提交日报
+        <ul>
+            <li>必须要用@指令，不能是字符串</li>
+            <li>日报的内容只支持普通的文本</li>
+            <li>可以多次提交，会记录所有内容</li>
+        </ul>
+    </li>
+    <li><code>/日报 帮助</code>：获取查看本页面的链接</li>
+    <li><code>/日报 查看 YYYY-MM-DD</code>：获取查看某一天日报的链接</li>
+    <li><code>/日报 用户列表</code>：查看可以提交日报的用户列表</li>
+</ul>
+</body>
+</html>

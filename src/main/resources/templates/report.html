@@ -1,0 +1,46 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:text="${report.getDate()}"></title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+</head>
+<body>
+<h1 th:text="${report.getDate()}"></h1>
+<p th:if="${users.size() == 0}">今天大家都发了日报！</p>
+<p th:if="${users.size() != 0}">
+    今天
+    <span th:each="user, stat: ${users}" th:remove="tag">
+        <span th:text="${user.getName()}" th:remove="tag"></span>
+        <span th:if="!${stat.last}" th:remove="tag">、</span>
+    </span>
+    没有发日报！
+</p>
+<table th:border="1" th:style="'width:100%;'">
+    <thead>
+    <tr>
+        <th th:style="'width:15%;'">姓名</th>
+        <th th:style="'width:85%;'">内容</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="post: ${report.getPosts()}">
+        <td th:text="${post.getValue().getName()}" th:style="'text-align:center;'"></td>
+        <td>
+            <div th:each="single, stat: ${post.getValue().getList()}">
+                <span th:text="${#dates.format(single.getDate(), 'YYYY-MM-dd HH:mm')}"></span><br/>
+                <div th:text="${single.getContent()}"></div>
+                <br th:if="!${stat.last}"/>
+            </div>
+        </td>
+    </tr>
+    </tbody>
+</table>
+<p th:if="${previous != null}">
+    前一天：<a th:text="${previous.getDate()}"
+           th:href="'/' + ${previous.getDate()} + '?token=' + ${previous.getToken()}"></a>
+</p>
+<p th:if="${next != null}">
+    后一天：<a th:text="${next.getDate()}" th:href="'/' + ${next.getDate()} + '?token=' + ${next.getToken()}"></a>
+</p>
+</body>
+</html>

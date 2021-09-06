@@ -1,0 +1,30 @@
+mirai:
+  botId: 114514
+  groupId: 233333
+  apiUrl: ws://localhost:8081
+  webUrl: http://localhost:8080
+  users:
+    - id: 1145141919
+      name: senpai
+
+logging:
+  #file.name:
+  level:
+    root: ERROR
+    cn.nju.edu: DEBUG
+
+spring:
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: report
+      #username:
+      #password
+
+server:
+  address: 0.0.0.0
+  port: 8080
+  error:
+    whitelabel:
+      enabled: false
