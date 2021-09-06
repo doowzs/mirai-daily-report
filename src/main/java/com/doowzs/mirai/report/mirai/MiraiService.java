@@ -78,12 +78,16 @@ public class MiraiService {
 
     public Report getReportOfDay() {
         DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
-        return getReportOfDay(format.format(new Date()));
+        return repository.findOne(Example.of(new Report(format.format(new Date()))))
+                .orElseGet(() -> {
+                    Report report = new Report(format.format(new Date()), UUID.randomUUID().toString());
+                    repository.save(report);
+                    return report;
+                });
     }
 
     public Report getReportOfDay(String day) {
-        return repository.findOne(Example.of(new Report(day)))
-                .orElse(new Report(day, UUID.randomUUID().toString()));
+        return repository.findOne(Example.of(new Report(day))).orElse(null);
     }
 
     public void createReportOfDay() {
