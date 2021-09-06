@@ -10,6 +10,7 @@ import org.springframework.web.socket.*;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class MiraiHandler implements WebSocketHandler {
@@ -62,7 +63,7 @@ public class MiraiHandler implements WebSocketHandler {
         }
     }
 
-    private void handleReportEvent(MiraiEvent event) throws IOException {
+    private void handleReportEvent(MiraiEvent event) {
         User user = service.getEventUser(event);
         if (user.getName() == null) {
             service.sendGroupMessage(String.format("提交日报失败：用户%d不在提交日报的列表中！", user.getId()));
@@ -89,7 +90,7 @@ public class MiraiHandler implements WebSocketHandler {
         }
     }
 
-    protected void handleCommandEvent(MiraiEvent event) throws IOException {
+    protected void handleCommandEvent(MiraiEvent event) {
         List<String> parts = List.of(event.getData().getMessageChain().get(1).getText().split(" "));
         if (parts.size() < 2) {
             service.sendGroupMessage(String.format("请输入指令名称！指令大全请查看%s。", config.getWebUrl()));
@@ -100,10 +101,11 @@ public class MiraiHandler implements WebSocketHandler {
                 service.sendGroupMessage("请输入查看日期，格式YYYY-MM-DD！");
                 return;
             }
-            Report report = service.getReportOfDay(parts.get(2));
-            if (report == null) {
+            Optional<Report> optionalReport = service.getReportOfDay(parts.get(2));
+            if (optionalReport.isEmpty()) {
                 service.sendGroupMessage(String.format("没有日期为%s的日报！", parts.get(2)));
             } else {
+                Report report = optionalReport.get();
                 service.sendGroupMessage(String.format("%s/%s?token=%s",
                         config.getWebUrl(), report.getDate(), report.getToken()));
             }

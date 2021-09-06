@@ -29,17 +29,18 @@ public class MiraiTasks {
     }
 
     @Scheduled(cron = "0 30 8 * * MON-FRI")
-    public void sendReportCall() throws IOException {
-        service.sendGroupMessage("早上好！请大家 @日报 提交今天的日报！");
+    public void sendReportCall() {
+        service.sendGroupMessage("早上好！请大家 @日报 提交日报总结一下昨天的工作！\n\n"
+                + "例如：@日报 1.上研究生学术诚信课\n2.批改问题求解的书面作业\n3.开组会");
     }
 
     @Scheduled(cron = "0 30 8 * * SAT-SUN")
-    public void sendWeekendCall() throws IOException {
+    public void sendWeekendCall() {
         service.sendGroupMessage("早上好！今天是快乐的周末！");
     }
 
     @Scheduled(cron = "0 30 10 * * MON-FRI")
-    public void sendReportSummary() throws IOException {
+    public void sendReportSummary() {
         Report report = service.getReportOfDay();
         List<User> users = config.getUsers();
         users.removeIf(u -> report.getPosts().containsKey(u.getId()));

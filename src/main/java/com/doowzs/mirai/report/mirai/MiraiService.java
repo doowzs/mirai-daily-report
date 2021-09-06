@@ -11,6 +11,7 @@ import org.springframework.data.domain.Example;
 import org.springframework.stereotype.Service;
 import org.springframework.web.socket.TextMessage;
 
+import javax.swing.text.html.Option;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -62,9 +63,7 @@ public class MiraiService {
 
     public User getEventUser(MiraiEvent event) {
         Long id = event.getData().getSender().getId();
-        config.getUsers().forEach(u -> {
-            logger.debug(String.format("Available user %d %s", u.getId(), u.getName()));
-        });
+        config.getUsers().forEach(u -> logger.debug(String.format("Available user %d %s", u.getId(), u.getName())));
         return config.getUsers().stream()
                 .filter(u -> Objects.equals(u.getId(), id))
                 .findFirst().orElse(new User(id));
@@ -78,21 +77,18 @@ public class MiraiService {
 
     public Report getReportOfDay() {
         DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
-        return repository.findOne(Example.of(new Report(format.format(new Date()))))
-                .orElseGet(() -> {
-                    Report report = new Report(format.format(new Date()), UUID.randomUUID().toString());
-                    repository.save(report);
-                    return report;
-                });
+        return getReportOfDay(format.format(new Date())).orElse(createReportOfDay());
     }
 
-    public Report getReportOfDay(String day) {
-        return repository.findOne(Example.of(new Report(day))).orElse(null);
+    public Optional<Report> getReportOfDay(String day) {
+        return repository.findOne(Example.of(new Report(day)));
     }
 
-    public void createReportOfDay() {
-        Report report = getReportOfDay();
+    public Report createReportOfDay() {
+        DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+        Report report = new Report(format.format(new Date()), UUID.randomUUID().toString());
         repository.save(report);
+        return report;
     }
 
     public Report updateReport(User user, String content) {
@@ -106,7 +102,7 @@ public class MiraiService {
         return report;
     }
 
-    public void sendGroupMessage(String message) throws IOException {
+    public void sendGroupMessage(String message) {
         MiraiMessage msg = new MiraiMessage();
         msg.setType("Plain");
         msg.setText(message);
