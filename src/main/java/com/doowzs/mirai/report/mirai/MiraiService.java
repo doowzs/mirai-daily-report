@@ -40,25 +40,39 @@ public class MiraiService {
                 && Objects.equals(event.getData().getSender().getGroup().getId(), config.getGroupId());
     }
 
-    public boolean isReportEvent(MiraiEvent event) {
+    public String parseReportEvent(MiraiEvent event) {
         if (!isFromGroup(event)) {
-            return false;
+            return null;
         }
+
         List<MiraiMessage> messages = event.getData().getMessageChain();
-        return messages.size() >= 3 && messages.get(1) != null && messages.get(2) != null
+        boolean isAtReport = messages.size() >= 3 && messages.get(1) != null && messages.get(2) != null
                 && Objects.equals(messages.get(1).getType(), "At")
                 && Objects.equals(messages.get(1).getTarget(), config.getBotId())
                 && Objects.equals(messages.get(2).getType(), "Plain");
+        if (isAtReport) {
+            return messages.get(2).getText().stripLeading();
+        }
+
+        String plainReportPrefix = "@日报";
+        boolean isPlainReport = messages.size() >= 2 && messages.get(1) != null
+                && Objects.equals(messages.get(1).getType(), "Plain")
+                && messages.get(1).getText().startsWith(plainReportPrefix);
+        return isPlainReport ? messages.get(1).getText().substring(plainReportPrefix.length()).stripLeading() : null;
     }
 
-    public boolean isCommandEvent(MiraiEvent event) {
+    public List<String> parseCommandEvent(MiraiEvent event) {
         if (!isFromGroup(event)) {
-            return false;
+            return null;
         }
+
         List<MiraiMessage> messages = event.getData().getMessageChain();
-        return messages.size() >= 2 && messages.get(1) != null
+        boolean isCommandEvent = messages.size() >= 2 && messages.get(1) != null
                 && Objects.equals(messages.get(1).getType(), "Plain")
                 && messages.get(1).getText().startsWith("/日报");
+        return isCommandEvent
+                ? Arrays.stream(messages.get(1).getText().split(" ")).skip(1).collect(Collectors.toList())
+                : null;
     }
 
     public User getEventUser(MiraiEvent event) {
@@ -67,12 +81,6 @@ public class MiraiService {
         return config.getUsers().stream()
                 .filter(u -> Objects.equals(u.getId(), id))
                 .findFirst().orElse(new User(id));
-    }
-
-    public String getReportEventContent(MiraiEvent event) {
-        return event.getData().getMessageChain().size() >= 3
-                ? event.getData().getMessageChain().get(2).getText().stripLeading()
-                : "ERROR";
     }
 
     public Report getReportOfDay() {
@@ -100,6 +108,36 @@ public class MiraiService {
         report.getPosts().get(user.getId()).getList().add(single);
         repository.save(report);
         return report;
+    }
+
+    public void sendSummaryOfDay() {
+        sendSummaryOfDay(false);
+    }
+
+    public void sendSummaryOfDay(boolean atUsers) {
+        Report report = getReportOfDay();
+        List<User> users = config.getUsers();
+        users.removeIf(u -> report.getPosts().containsKey(u.getId()));
+
+        DateFormat format = new SimpleDateFormat("hh:mm");
+        StringBuilder builder = new StringBuilder();
+        builder.append(users.size() == 0 ? "今天大家都发了日报！"
+                : String.format("今天%s没有发日报！",
+                users.stream().map(User::getName).collect(Collectors.joining("、"))));
+        report.getPosts().forEach((number, post) -> {
+            builder.append(String.format("\n\n%s：\n", post.getName()));
+            post.getList().forEach(single ->
+                    builder.append(String.format("- [%s] %s\n", format.format(single.getDate()), single.getContent())));
+        });
+        builder.append(String.format("\n\n访问%s/%s?token=%s查看今天的日报。",
+                config.getWebUrl(), report.getDate(), report.getToken()));
+        MiraiMessage message = MiraiMessage.Plain(builder.toString());
+
+        List<MiraiMessage> messages = new ArrayList<>(List.of(message));
+        if (atUsers) {
+            users.forEach(user -> messages.add(MiraiMessage.At(user.getId())));
+        }
+        sendGroupMessage(messages.toArray(new MiraiMessage[0]));
     }
 
     public void sendGroupMessage(String message) {

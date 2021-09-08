@@ -49,10 +49,12 @@ public class MiraiHandler implements WebSocketHandler {
         logger.debug(String.format("Received %s", message.getPayload()));
         try {
             MiraiEvent event = mapper.readValue((String) message.getPayload(), MiraiEvent.class);
-            if (service.isReportEvent(event)) {
-                handleReportEvent(event);
-            } else if (service.isCommandEvent(event)) {
-                handleCommandEvent(event);
+            String report; // Java sucks, I don't want to use lambda and write hundreds of try ... catch :(
+            List<String> commands;
+            if ((report = service.parseReportEvent(event)) != null) {
+                handleReportEvent(event, report);
+            } else if ((commands = service.parseCommandEvent(event)) != null) {
+                handleCommandEvent(event, commands);
             }
         } catch (Exception e) {
             logger.error(String.format("%s %s", e.getClass().getName(), e.getMessage()), e);
@@ -63,13 +65,12 @@ public class MiraiHandler implements WebSocketHandler {
         }
     }
 
-    private void handleReportEvent(MiraiEvent event) {
+    private void handleReportEvent(MiraiEvent event, String content) {
         User user = service.getEventUser(event);
         if (user.getName() == null) {
             service.sendGroupMessage(String.format("提交日报失败：用户%d不在提交日报的列表中！", user.getId()));
             logger.info(String.format("UnknownUser %d", user.getId()));
         } else {
-            String content = service.getReportEventContent(event);
             String reply;
             if (content.isEmpty()) {
                 reply = "日报内容不能为空！";
@@ -90,32 +91,33 @@ public class MiraiHandler implements WebSocketHandler {
         }
     }
 
-    protected void handleCommandEvent(MiraiEvent event) {
-        List<String> parts = List.of(event.getData().getMessageChain().get(1).getText().split(" "));
-        if (parts.size() < 2) {
+    protected void handleCommandEvent(MiraiEvent event, List<String> commands) {
+        if (commands.isEmpty()) {
             service.sendGroupMessage(String.format("请输入指令名称！指令大全请查看%s。", config.getWebUrl()));
-        } else if (parts.get(1).equals("帮助")) {
+        } else if (commands.get(0).equals("帮助")) {
             service.sendGroupMessage(String.format("%s", config.getWebUrl()));
-        } else if (parts.get(1).equals("查看")) {
-            if (parts.size() < 3) {
+        } else if (commands.get(0).equals("查看")) {
+            if (commands.size() < 2) {
                 service.sendGroupMessage("请输入查看日期，格式YYYY-MM-DD！");
                 return;
             }
-            Optional<Report> optionalReport = service.getReportOfDay(parts.get(2));
+            Optional<Report> optionalReport = service.getReportOfDay(commands.get(1));
             if (optionalReport.isEmpty()) {
-                service.sendGroupMessage(String.format("没有日期为%s的日报！", parts.get(2)));
+                service.sendGroupMessage(String.format("没有日期为%s的日报！", commands.get(1)));
             } else {
                 Report report = optionalReport.get();
                 service.sendGroupMessage(String.format("%s/%s?token=%s",
                         config.getWebUrl(), report.getDate(), report.getToken()));
             }
-        } else if (parts.get(1).equals("用户列表")) {
+        } else if (commands.get(0).equals("用户列表")) {
             List<User> users = config.getUsers();
             service.sendGroupMessage(users.stream()
                     .map(u -> u.getId() + " " + u.getName())
                     .collect(Collectors.joining("\n")));
+        } else if (commands.get(0).equals("今日总结")) {
+            service.sendSummaryOfDay();
         } else {
-            service.sendGroupMessage(String.format("无法处理指令%s！指令大全请查看%s。", parts.get(1), config.getWebUrl()));
+            service.sendGroupMessage(String.format("无法处理指令%s！指令大全请查看%s。", commands.get(0), config.getWebUrl()));
         }
     }
 

@@ -4,22 +4,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import com.doowzs.mirai.report.models.Report;
-import com.doowzs.mirai.report.models.User;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Component
 public class MiraiTasks {
 
-    private final MiraiConfig config;
     private final MiraiService service;
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    MiraiTasks(MiraiConfig config, MiraiService service) {
-        this.config = config;
+    MiraiTasks(MiraiService service) {
         this.service = service;
     }
 
@@ -30,8 +22,8 @@ public class MiraiTasks {
 
     @Scheduled(cron = "0 30 8 * * MON-FRI")
     public void sendReportCall() {
-        service.sendGroupMessage("早上好！请大家 @日报 提交日报总结一下昨天的工作！\n\n"
-                + "例如：@日报 1.上研究生学术诚信课\n2.批改问题求解的书面作业\n3.开组会");
+        service.sendGroupMessage("早上好！今天又是新的一天！\n"
+                + "请大家 @日报 总结昨天的工作或者今天做了什么。");
     }
 
     @Scheduled(cron = "0 30 8 * * SAT-SUN")
@@ -39,18 +31,9 @@ public class MiraiTasks {
         service.sendGroupMessage("早上好！今天是快乐的周末！");
     }
 
-    @Scheduled(cron = "0 30 10 * * MON-FRI")
+    @Scheduled(cron = "0 00 23 * * MON-FRI")
     public void sendReportSummary() {
-        Report report = service.getReportOfDay();
-        List<User> users = config.getUsers();
-        users.removeIf(u -> report.getPosts().containsKey(u.getId()));
-
-        String msg1 = users.size() == 0 ? "今天大家都提交了日报！"
-                : String.format("今天%s没有提交日报！",
-                users.stream().map(User::getName).collect(Collectors.joining("、")));
-        String msg2 = String.format("访问%s/%s?token=%s查看今天的日报。",
-                config.getWebUrl(), report.getDate(), report.getToken());
-        service.sendGroupMessage(msg1 + msg2);
+        service.sendSummaryOfDay(true);
     }
 
 }

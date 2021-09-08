@@ -10,6 +10,23 @@ public class MiraiMessage {
     private String text;
     private String display;
 
+    public MiraiMessage() {
+    }
+
+    public static MiraiMessage At(Long number) {
+        MiraiMessage message = new MiraiMessage();
+        message.setType("At");
+        message.setTarget(number);
+        return message;
+    }
+
+    public static MiraiMessage Plain(String text) {
+        MiraiMessage message = new MiraiMessage();
+        message.setType("Plain");
+        message.setText(text);
+        return message;
+    }
+
     public String getType() {
         return type;
     }
