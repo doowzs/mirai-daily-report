@@ -119,7 +119,7 @@ public class MiraiService {
         List<User> users = config.getUsers();
         users.removeIf(u -> report.getPosts().containsKey(u.getId()));
 
-        DateFormat format = new SimpleDateFormat("hh:mm");
+        DateFormat format = new SimpleDateFormat("HH:mm");
         StringBuilder builder = new StringBuilder();
         builder.append(users.size() == 0 ? "今天大家都发了日报！"
                 : String.format("今天%s没有发日报！",
